@@ -1,0 +1,6 @@
+FastAPI==0.95.1
+transformers==4.24.0
+pandas==1.5.3
+SQLAlchemy==2.0.0
+python-dotenv==1.0.0
+uvicorn==0.22.0
