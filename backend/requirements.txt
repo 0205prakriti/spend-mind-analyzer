@@ -1,0 +1,4 @@
+FastAPI
+transformers
+pandas
+SQLAlchemy
