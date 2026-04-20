@@ -1,41 +1,76 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from typing import List, Dict
+from typing import Dict, List, Optional
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
+
+from correlation_engine import SpendingMindAnalyzer
+from mood_detector import detect_emotion
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+analyzer = SpendingMindAnalyzer()
 
 # Models
 class EmotionRequest(BaseModel):
     text: str
 
 class Transaction(BaseModel):
-    amount: float
-    category: str
+    amount: float = Field(gt=0)
+    description: Optional[str] = ""
+    category: Optional[str] = ""
     date: str
 
-class CorrelationResponse(BaseModel):
-    correlation: float
-    details: Dict[str, float]
 
-transactions_db: List[Transaction] = []  # In-memory database for transactions
+class AnalyzeRequest(BaseModel):
+    transactions: Optional[List[Transaction]] = None
+
+
+transactions_db: List[Dict] = []
 
 @app.post("/classify-emotion/")
 async def classify_emotion(request: EmotionRequest):
-    # Placeholder for emotion classification logic
-    # In real implementation, integrate a model for emotion analysis
-    return {"emotion": "happy"}  # Example response
+    return detect_emotion(request.text)
 
 @app.post("/track-transaction/")
 async def track_transaction(transaction: Transaction):
-    transactions_db.append(transaction)
-    return {"message": "Transaction tracked successfully", "transaction": transaction}
+    txn = transaction.model_dump()
+    transactions_db.append(txn)
+    return {
+        "message": "Transaction tracked successfully",
+        "transaction": txn,
+        "total_transactions": len(transactions_db),
+    }
+
+
+@app.post("/transactions/")
+async def add_transaction(transaction: Transaction):
+    return await track_transaction(transaction)
+
+
+@app.get("/transactions/")
+async def list_transactions():
+    return {"transactions": transactions_db, "count": len(transactions_db)}
+
+
+@app.post("/analyze-spending/")
+async def analyze_spending(payload: AnalyzeRequest):
+    source = [item.model_dump() for item in payload.transactions] if payload.transactions else transactions_db
+    return analyzer.analyze(source)
+
 
 @app.get("/correlation/")
 async def get_correlation():
-    # Placeholder for correlation engine logic
-    # In a real implementation, calculate correlation between transactions and emotions
-    correlation_result = 0.85  # Dummy correlation value
-    return CorrelationResponse(correlation=correlation_result, details={"categoryA": 0.7, "categoryB": 0.3})
+    # Kept for backward compatibility with existing frontend route naming.
+    return analyzer.analyze(transactions_db)
 
 # To run the app: Uncomment the following line when running locally
 # if __name__ == "__main__":

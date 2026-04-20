@@ -1,6 +1,8 @@
 FastAPI
 transformers
 pandas
+numpy
+scikit-learn
 SQLAlchemy
 python-dotenv
 uvicorn
