@@ -1,0 +1,13 @@
+import React from 'react';
+
+const Profile = () => {
+    return (
+        <div>
+            <h1>User Profile</h1>
+            <p>Manage your profile settings here.</p>
+            {/* Add user details form and settings options */}
+        </div>
+    );
+};
+
+export default Profile;

@@ -1,21 +1,52 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { get, post } from '../utils/api';
 
-const SpendingTracker = () => {
+const SpendingTracker = ({ onTransactionAdded }) => {
     const [transactions, setTransactions] = useState([]);
     const [amount, setAmount] = useState('');
     const [description, setDescription] = useState('');
+    const [category, setCategory] = useState('');
+    const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    const handleAddTransaction = () => {
+    const loadTransactions = async () => {
+        try {
+            const response = await get('/transactions/');
+            setTransactions(response.transactions || []);
+        } catch (err) {
+            setError(err.message || 'Failed to load transactions');
+        }
+    };
+
+    useEffect(() => {
+        loadTransactions();
+    }, []);
+
+    const handleAddTransaction = async () => {
+        setError('');
         if (amount && description) {
+            setLoading(true);
             const newTransaction = {
-                id: Date.now(),
                 amount: parseFloat(amount),
                 description,
-                date: new Date().toISOString(),
+                category,
+                date: new Date(date).toISOString(),
             };
-            setTransactions([...transactions, newTransaction]);
-            setAmount('');
-            setDescription('');
+            try {
+                await post('/transactions/', newTransaction);
+                await loadTransactions();
+                if (onTransactionAdded) {
+                    onTransactionAdded();
+                }
+                setAmount('');
+                setDescription('');
+                setCategory('');
+            } catch (err) {
+                setError(err.message || 'Failed to add transaction');
+            } finally {
+                setLoading(false);
+            }
         }
     };
 
@@ -35,13 +66,24 @@ const SpendingTracker = () => {
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Description"
                 />
-                <button onClick={handleAddTransaction}>Add Transaction</button>
+                <input
+                    type="text"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    placeholder="Category (optional)"
+                />
+                <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+                <button onClick={handleAddTransaction} disabled={loading}>
+                    {loading ? 'Saving...' : 'Add Transaction'}
+                </button>
             </div>
+            {error && <p style={{ color: 'crimson' }}>{error}</p>}
             <h3>Transaction History</h3>
             <ul>
-                {transactions.map((transaction) => (
-                    <li key={transaction.id}>
+                {transactions.map((transaction, idx) => (
+                    <li key={`${transaction.date}-${transaction.amount}-${idx}`}>
                         <strong>${transaction.amount.toFixed(2)}</strong>: {transaction.description} on {new Date(transaction.date).toLocaleString()}
+                        {transaction.category ? ` (${transaction.category})` : ''}
                     </li>
                 ))}
             </ul>

@@ -1,31 +1,50 @@
 import React, { useState } from 'react';
+import { post } from '../utils/api';
 
 const EmotionClassifier = () => {
-    const [emotion, setEmotion] = useState('');
-    const [classification, setClassification] = useState('');
+    const [text, setText] = useState('');
+    const [classification, setClassification] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // Logic for classifying the emotion would go here
-        // For demonstration, let's just set the classification to the input emotion
-        setClassification(`You are feeling: ${emotion}`);
+        setLoading(true);
+        setError('');
+        try {
+            const result = await post('/classify-emotion/', { text });
+            setClassification(result);
+        } catch (err) {
+            setError(err.message || 'Failed to classify emotion');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
         <div>
             <h2>Emotion Classifier</h2>
             <form onSubmit={handleSubmit}>
-                <label htmlFor="emotion">Enter your emotion:</label>
+                <label htmlFor="emotion-text">How are you feeling?</label>
                 <input
                     type="text"
-                    id="emotion"
-                    value={emotion}
-                    onChange={(e) => setEmotion(e.target.value)}
+                    id="emotion-text"
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    placeholder="I feel calm but a bit tired today"
                     required
                 />
-                <button type="submit">Classify</button>
+                <button type="submit" disabled={loading}>
+                    {loading ? 'Classifying...' : 'Classify'}
+                </button>
             </form>
-            {classification && <p>{classification}</p>}
+            {error && <p style={{ color: 'crimson' }}>{error}</p>}
+            {classification && (
+                <p>
+                    Emotion: <strong>{classification.emotion}</strong>
+                    {typeof classification.score === 'number' ? ` (score: ${classification.score})` : ''}
+                </p>
+            )}
         </div>
     );
 };

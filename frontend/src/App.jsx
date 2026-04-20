@@ -1,42 +1,22 @@
 import React, { useState } from 'react';
 import './App.css';
+import EmotionClassifier from './components/EmotionClassifier';
+import SpendingTracker from './components/SpendingTracker';
+import CorrelationAnalyzer from './components/CorrelationAnalyzer';
 
 const App = () => {
-    const [mood, setMood] = useState('');
-    const [spending, setSpending] = useState('');
+    const [refreshKey, setRefreshKey] = useState(0);
 
-    const handleMoodChange = (event) => {
-        setMood(event.target.value);
-    };
-
-    const handleSpendingChange = (event) => {
-        setSpending(event.target.value);
-    };
-
-    const handleSubmit = (event) => {
-        event.preventDefault();
-        // Handle submission logic here
-        console.log(`Mood: ${mood}, Spending: ${spending}`);
+    const handleTransactionAdded = () => {
+        setRefreshKey((prev) => prev + 1);
     };
 
     return (
         <div className="dashboard">
             <h1>Spend Mind Analyzer</h1>
-            <form onSubmit={handleSubmit}>
-                <div>
-                    <label>
-                        Mood:
-                        <input type="text" value={mood} onChange={handleMoodChange} />
-                    </label>
-                </div>
-                <div>
-                    <label>
-                        Spending:
-                        <input type="number" value={spending} onChange={handleSpendingChange} />
-                    </label>
-                </div>
-                <button type="submit">Submit</button>
-            </form>
+            <EmotionClassifier />
+            <SpendingTracker onTransactionAdded={handleTransactionAdded} />
+            <CorrelationAnalyzer refreshKey={refreshKey} />
         </div>
     );
 };
