@@ -1,33 +1,59 @@
-from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, ForeignKey
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from datetime import datetime, timezone
+from pathlib import Path
+
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, create_engine
+from sqlalchemy.orm import Mapped, declarative_base, mapped_column, relationship, sessionmaker
 
 Base = declarative_base()
 
+DB_PATH = Path(__file__).resolve().parent / "spend_mind_analyzer.db"
+DATABASE_URL = f"sqlite:///{DB_PATH}"
+
+engine = create_engine(
+    DATABASE_URL,
+    connect_args={"check_same_thread": False},
+)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+
 class MoodEntry(Base):
-    __tablename__ = 'mood_entries'
+    __tablename__ = "mood_entries"
 
-    id = Column(Integer, primary_key=True)
-    mood = Column(String, nullable=False)
-    timestamp = Column(DateTime, nullable=False)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[str] = mapped_column(String(100), default="anonymous", index=True)
+    session_id: Mapped[str] = mapped_column(String(100), default="default", index=True)
+    text: Mapped[str] = mapped_column(String, default="")
+    emotion: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    score: Mapped[float] = mapped_column(Float, default=0.0)
+    timestamp: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        index=True,
+    )
 
-    def __repr__(self):
-        return f"<MoodEntry(mood={{self.mood}}, timestamp={{self.timestamp}})>"
+    transactions: Mapped[list["Transaction"]] = relationship(
+        "Transaction",
+        back_populates="mood_entry",
+    )
+
 
 class Transaction(Base):
-    __tablename__ = 'transactions'
+    __tablename__ = "transactions"
 
-    id = Column(Integer, primary_key=True)
-    amount = Column(Float, nullable=False)
-    category = Column(String, nullable=False)
-    timestamp = Column(DateTime, nullable=False)
-    mood_entry_id = Column(Integer, ForeignKey('mood_entries.id'))
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[str] = mapped_column(String(100), default="anonymous", index=True)
+    session_id: Mapped[str] = mapped_column(String(100), default="default", index=True)
+    amount: Mapped[float] = mapped_column(Float, nullable=False)
+    description: Mapped[str] = mapped_column(String, default="")
+    category: Mapped[str] = mapped_column(String(100), default="")
+    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    mood_entry_id: Mapped[int | None] = mapped_column(ForeignKey("mood_entries.id"), nullable=True, index=True)
 
-    def __repr__(self):
-        return f"<Transaction(amount={{self.amount}}, category={{self.category}}, timestamp={{self.timestamp}})>"
+    mood_entry: Mapped[MoodEntry | None] = relationship(
+        "MoodEntry",
+        back_populates="transactions",
+    )
 
-# Database connection and session setup
-DATABASE_URL = "sqlite:///spend_mind_analyzer.db"  # Example database URL
-engine = create_engine(DATABASE_URL)
-Base.metadata.create_all(engine)
-Session = sessionmaker(bind=engine)
+
+def init_db() -> None:
+    Base.metadata.create_all(bind=engine)
