@@ -24,6 +24,8 @@ app.add_middleware(
 
 analyzer = SpendingMindAnalyzer()
 init_db()
+APP_VERSION = os.getenv("APP_VERSION", "dev")
+APP_COMMIT = os.getenv("APP_COMMIT", "unknown")
 
 
 def get_db() -> Session:
@@ -96,6 +98,18 @@ class AnalyzeRequest(BaseModel):
     transactions: Optional[List[Transaction]] = None
     user_id: Optional[str] = None
     session_id: Optional[str] = None
+
+
+@app.get("/health/")
+async def health():
+    return {
+        "status": "ok",
+        "service": "spend-mind-analyzer-backend",
+        "version": APP_VERSION,
+        "commit": APP_COMMIT,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
 
 @app.post("/classify-emotion/")
 async def classify_emotion(request: EmotionRequest):
