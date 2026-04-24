@@ -49,6 +49,12 @@ def _parse_iso_datetime(value: Optional[str]) -> datetime:
     return parsed.astimezone(timezone.utc)
 
 
+def _as_utc(dt: datetime) -> datetime:
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
 def _find_nearest_mood_entry(
     db: Session,
     *,
@@ -67,7 +73,8 @@ def _find_nearest_mood_entry(
     if not moods:
         return None
 
-    return min(moods, key=lambda entry: abs((entry.timestamp - timestamp).total_seconds()))
+    target = _as_utc(timestamp)
+    return min(moods, key=lambda entry: abs((_as_utc(entry.timestamp) - target).total_seconds()))
 
 # Models
 class EmotionRequest(BaseModel):
