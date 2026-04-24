@@ -1,21 +1,23 @@
 from datetime import datetime, timezone
+import os
 from typing import Dict, List, Optional
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from correlation_engine import SpendingMindAnalyzer
-from database import MoodEntry, SessionLocal, Transaction as DBTransaction, init_db
-from mood_detector import detect_emotion
+from backend.correlation_engine import SpendingMindAnalyzer
+from backend.database import MoodEntry, SessionLocal, Transaction as DBTransaction, init_db
+from backend.mood_detector import detect_emotion
 
 app = FastAPI()
+cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=[origin.strip() for origin in cors_origins if origin.strip()],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -37,7 +39,11 @@ def _parse_iso_datetime(value: Optional[str]) -> datetime:
     if not value:
         return datetime.now(timezone.utc)
 
-    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail="Invalid datetime format. Use ISO-8601.") from exc
+
     if parsed.tzinfo is None:
         return parsed.replace(tzinfo=timezone.utc)
     return parsed.astimezone(timezone.utc)

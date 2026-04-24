@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import os
 from pathlib import Path
 
 from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, create_engine
@@ -7,12 +8,13 @@ from sqlalchemy.orm import Mapped, declarative_base, mapped_column, relationship
 Base = declarative_base()
 
 DB_PATH = Path(__file__).resolve().parent / "spend_mind_analyzer.db"
-DATABASE_URL = f"sqlite:///{DB_PATH}"
+DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DB_PATH}")
 
-engine = create_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False},
-)
+engine_kwargs = {}
+if DATABASE_URL.startswith("sqlite"):
+    engine_kwargs["connect_args"] = {"check_same_thread": False}
+
+engine = create_engine(DATABASE_URL, **engine_kwargs)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
