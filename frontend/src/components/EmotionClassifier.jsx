@@ -40,10 +40,17 @@ const EmotionClassifier = () => {
             </form>
             {error && <p style={{ color: 'crimson' }}>{error}</p>}
             {classification && (
-                <p>
-                    Emotion: <strong>{classification.emotion}</strong>
-                    {typeof classification.score === 'number' ? ` (score: ${classification.score})` : ''}
-                </p>
+                <>
+                    <p>
+                        Emotion: <strong>{classification.emotion}</strong>
+                        {typeof classification.score === 'number' ? ` (score: ${classification.score})` : ''}
+                    </p>
+                    {classification.model_available === false && (
+                        <p style={{ color: 'darkorange' }}>
+                            Emotion model is currently unavailable; showing neutral fallback.
+                        </p>
+                    )}
+                </>
             )}
         </div>
     );
