@@ -181,9 +181,18 @@ const Reports = ({ refreshKey }) => {
             <button onClick={handleExport} disabled={!filteredTransactions.length}>
                 Export Data
             </button>
+            {!filteredTransactions.length && (
+                <p style={{ color: '#555', marginTop: '8px' }}>
+                    No transactions match this date range. Try a quick range or clear dates.
+                </p>
+            )}
             <h2>Category Breakdown</h2>
             {!categoryBreakdown.length ? (
-                <p>No category data for the selected range.</p>
+                <p>
+                    {hasActiveFilter
+                        ? 'No category data for this filtered period.'
+                        : 'No category data available yet. Add some transactions to get insights.'}
+                </p>
             ) : (
                 <ul>
                     {categoryBreakdown.map(({ category, amount }) => (
