@@ -69,6 +69,11 @@ const Reports = ({ refreshKey }) => {
             .sort((a, b) => b.amount - a.amount);
     }, [filteredTransactions]);
 
+    const topCategory = useMemo(
+        () => (categoryBreakdown.length ? categoryBreakdown[0] : null),
+        [categoryBreakdown]
+    );
+
     const handleExport = () => {
         if (!filteredTransactions.length) return;
 
@@ -134,6 +139,12 @@ const Reports = ({ refreshKey }) => {
             </div>
             <p>Total Transactions: {filteredTransactions.length}</p>
             <p>Total Spent: ${totalSpent.toFixed(2)}</p>
+            <p>
+                Top Category:{' '}
+                {topCategory
+                    ? `${topCategory.category} ($${topCategory.amount.toFixed(2)})`
+                    : 'N/A'}
+            </p>
             <button onClick={handleExport} disabled={!filteredTransactions.length}>
                 Export Data
             </button>
