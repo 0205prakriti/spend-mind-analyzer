@@ -3,6 +3,7 @@ import './App.css';
 import EmotionClassifier from './components/EmotionClassifier';
 import SpendingTracker from './components/SpendingTracker';
 import CorrelationAnalyzer from './components/CorrelationAnalyzer';
+import Reports from './components/Reports';
 
 const App = () => {
     const [refreshKey, setRefreshKey] = useState(0);
@@ -17,6 +18,7 @@ const App = () => {
             <EmotionClassifier />
             <SpendingTracker onTransactionAdded={handleTransactionAdded} />
             <CorrelationAnalyzer refreshKey={refreshKey} />
+            <Reports refreshKey={refreshKey} />
         </div>
     );
 };
