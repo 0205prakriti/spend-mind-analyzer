@@ -115,8 +115,13 @@ const Reports = ({ refreshKey }) => {
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
+        const startLabel = startDate || 'start';
+        const endLabel = endDate || 'end';
+        const fileName = hasActiveFilter
+            ? `spend-mind-report-${startLabel}_to_${endLabel}.csv`
+            : 'spend-mind-report-all-time.csv';
         link.href = url;
-        link.setAttribute('download', 'spend-mind-report.csv');
+        link.setAttribute('download', fileName);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
