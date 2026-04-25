@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { get } from '../utils/api';
 
+const formatDateInput = (date) => date.toISOString().slice(0, 10);
+
 const Reports = ({ refreshKey }) => {
     const [transactions, setTransactions] = useState([]);
     const [error, setError] = useState('');
@@ -74,6 +76,23 @@ const Reports = ({ refreshKey }) => {
         [categoryBreakdown]
     );
 
+    const setQuickRange = (days) => {
+        const now = new Date();
+        const end = formatDateInput(now);
+        const startDateValue = new Date(now);
+        startDateValue.setDate(startDateValue.getDate() - (days - 1));
+        const start = formatDateInput(startDateValue);
+        setStartDate(start);
+        setEndDate(end);
+    };
+
+    const setThisMonth = () => {
+        const now = new Date();
+        const start = new Date(now.getFullYear(), now.getMonth(), 1);
+        setStartDate(formatDateInput(start));
+        setEndDate(formatDateInput(now));
+    };
+
     const handleExport = () => {
         if (!filteredTransactions.length) return;
 
@@ -137,6 +156,15 @@ const Reports = ({ refreshKey }) => {
                     Clear Dates
                 </button>
             </div>
+            <div style={{ marginTop: '8px' }}>
+                <button onClick={setThisMonth}>This Month</button>
+                <button onClick={() => setQuickRange(30)} style={{ marginLeft: '8px' }}>
+                    Last 30 Days
+                </button>
+                <button onClick={() => setQuickRange(90)} style={{ marginLeft: '8px' }}>
+                    Last 90 Days
+                </button>
+            </div>
             <p>Total Transactions: {filteredTransactions.length}</p>
             <p>Total Spent: ${totalSpent.toFixed(2)}</p>
             <p>
@@ -155,7 +183,9 @@ const Reports = ({ refreshKey }) => {
                 <ul>
                     {categoryBreakdown.map(({ category, amount }) => (
                         <li key={category}>
-                            {category}: ${amount.toFixed(2)}
+                            {category}: ${amount.toFixed(2)} (
+                            {totalSpent > 0 ? ((amount / totalSpent) * 100).toFixed(1) : '0.0'}
+                            %)
                         </li>
                     ))}
                 </ul>
