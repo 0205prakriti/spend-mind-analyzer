@@ -4,6 +4,8 @@ import { get } from '../utils/api';
 const Reports = ({ refreshKey }) => {
     const [transactions, setTransactions] = useState([]);
     const [error, setError] = useState('');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
 
     const loadTransactions = async () => {
         try {
@@ -19,16 +21,46 @@ const Reports = ({ refreshKey }) => {
         loadTransactions();
     }, [refreshKey]);
 
+    const filteredTransactions = useMemo(
+        () =>
+            transactions.filter((item) => {
+                const itemDate = new Date(item.date);
+                if (Number.isNaN(itemDate.getTime())) return false;
+
+                if (startDate) {
+                    const fromDate = new Date(`${startDate}T00:00:00`);
+                    if (itemDate < fromDate) return false;
+                }
+
+                if (endDate) {
+                    const toDate = new Date(`${endDate}T23:59:59.999`);
+                    if (itemDate > toDate) return false;
+                }
+
+                return true;
+            }),
+        [transactions, startDate, endDate]
+    );
+
     const totalSpent = useMemo(
-        () => transactions.reduce((sum, item) => sum + (Number(item.amount) || 0), 0),
-        [transactions]
+        () =>
+            filteredTransactions.reduce(
+                (sum, item) => sum + (Number(item.amount) || 0),
+                0
+            ),
+        [filteredTransactions]
+    );
+
+    const hasActiveFilter = useMemo(
+        () => Boolean(startDate || endDate),
+        [startDate, endDate]
     );
 
     const handleExport = () => {
-        if (!transactions.length) return;
+        if (!filteredTransactions.length) return;
 
         const header = ['date', 'description', 'category', 'amount'];
-        const rows = transactions.map((item) => [
+        const rows = filteredTransactions.map((item) => [
             new Date(item.date).toISOString(),
             item.description || '',
             item.category || '',
@@ -54,12 +86,42 @@ const Reports = ({ refreshKey }) => {
         URL.revokeObjectURL(url);
     };
 
+    const handleResetFilters = () => {
+        setStartDate('');
+        setEndDate('');
+    };
+
     return (
         <div>
             <h1>Data Export and Reporting</h1>
-            <p>Total Transactions: {transactions.length}</p>
+            <div>
+                <label htmlFor="report-start-date">From: </label>
+                <input
+                    id="report-start-date"
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                />
+                <label htmlFor="report-end-date" style={{ marginLeft: '8px' }}>
+                    To:{' '}
+                </label>
+                <input
+                    id="report-end-date"
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                />
+                <button
+                    onClick={handleResetFilters}
+                    disabled={!hasActiveFilter}
+                    style={{ marginLeft: '8px' }}
+                >
+                    Clear Dates
+                </button>
+            </div>
+            <p>Total Transactions: {filteredTransactions.length}</p>
             <p>Total Spent: ${totalSpent.toFixed(2)}</p>
-            <button onClick={handleExport} disabled={!transactions.length}>
+            <button onClick={handleExport} disabled={!filteredTransactions.length}>
                 Export Data
             </button>
             {error && <p style={{ color: 'crimson' }}>{error}</p>}
