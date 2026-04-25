@@ -56,6 +56,19 @@ const Reports = ({ refreshKey }) => {
         [startDate, endDate]
     );
 
+    const categoryBreakdown = useMemo(() => {
+        const categoryTotals = filteredTransactions.reduce((acc, item) => {
+            const key = item.category?.trim() || 'Uncategorized';
+            const amount = Number(item.amount) || 0;
+            acc[key] = (acc[key] || 0) + amount;
+            return acc;
+        }, {});
+
+        return Object.entries(categoryTotals)
+            .map(([category, amount]) => ({ category, amount }))
+            .sort((a, b) => b.amount - a.amount);
+    }, [filteredTransactions]);
+
     const handleExport = () => {
         if (!filteredTransactions.length) return;
 
@@ -124,6 +137,18 @@ const Reports = ({ refreshKey }) => {
             <button onClick={handleExport} disabled={!filteredTransactions.length}>
                 Export Data
             </button>
+            <h2>Category Breakdown</h2>
+            {!categoryBreakdown.length ? (
+                <p>No category data for the selected range.</p>
+            ) : (
+                <ul>
+                    {categoryBreakdown.map(({ category, amount }) => (
+                        <li key={category}>
+                            {category}: ${amount.toFixed(2)}
+                        </li>
+                    ))}
+                </ul>
+            )}
             {error && <p style={{ color: 'crimson' }}>{error}</p>}
         </div>
     );
