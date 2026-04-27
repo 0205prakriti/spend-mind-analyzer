@@ -194,15 +194,44 @@ const Reports = ({ refreshKey }) => {
                         : 'No category data available yet. Add some transactions to get insights.'}
                 </p>
             ) : (
-                <ul>
-                    {categoryBreakdown.map(({ category, amount }) => (
-                        <li key={category}>
-                            {category}: ${amount.toFixed(2)} (
-                            {totalSpent > 0 ? ((amount / totalSpent) * 100).toFixed(1) : '0.0'}
-                            %)
-                        </li>
-                    ))}
-                </ul>
+                <div>
+                    <div style={{ marginBottom: '8px' }}>
+                        {categoryBreakdown.map(({ category, amount }) => {
+                            const percent =
+                                totalSpent > 0
+                                    ? ((amount / totalSpent) * 100).toFixed(1)
+                                    : '0.0';
+
+                            return (
+                                <div key={category} style={{ marginBottom: '8px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                        <span>
+                                            {category}: ${amount.toFixed(2)} ({percent}%)
+                                        </span>
+                                    </div>
+                                    <div
+                                        style={{
+                                            width: '100%',
+                                            backgroundColor: '#eee',
+                                            height: '10px',
+                                            borderRadius: '8px',
+                                            marginTop: '4px',
+                                        }}
+                                    >
+                                        <div
+                                            style={{
+                                                width: `${percent}%`,
+                                                backgroundColor: '#4f46e5',
+                                                height: '100%',
+                                                borderRadius: '8px',
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
             )}
             {error && <p style={{ color: 'crimson' }}>{error}</p>}
         </div>
