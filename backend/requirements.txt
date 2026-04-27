@@ -1,5 +1,6 @@
 FastAPI
 transformers
+torch
 pandas
 numpy
 scikit-learn
